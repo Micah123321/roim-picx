@@ -5,6 +5,38 @@ import StatusCode, {Ok, Fail, Build, ImgItem, ImgList, ImgReq, Folder, AuthToken
 import {checkFileType, getFilePath, parseRange} from '../utils'
 import {R2ListOptions} from "@cloudflare/workers-types";
 
+
+const RATE_LIMIT_MAX_REQUESTS = 20; // 每分钟最多请求次数
+const RATE_LIMIT_TIME_SPAN = 60 * 1000; // 时间窗口（毫秒）
+
+async function rateLimit(ip, env) {
+    const currentTime = Date.now();
+    const key = `rate_limit_${ip}`;
+    let data = await env.RATE_LIMIT.get(key, { type: "json" });
+
+    if (data) {
+        // 检查时间窗口
+        if (currentTime - data.startTime < RATE_LIMIT_TIME_SPAN) {
+            // 如果请求次数超过限制，则拒绝请求
+            if (data.count >= RATE_LIMIT_MAX_REQUESTS) {
+                return true; // 表示已达到限流阈值
+            }
+            // 更新计数器
+            await env.RATE_LIMIT.put(key, JSON.stringify({ count: data.count + 1, startTime: data.startTime }));
+        } else {
+            // 时间窗口已过，重置计数器
+            await env.RATE_LIMIT.put(key, JSON.stringify({ count: 1, startTime: currentTime }));
+        }
+    } else {
+        // 首次请求，初始化计数器
+        await env.RATE_LIMIT.put(key, JSON.stringify({ count: 1, startTime: currentTime }));
+    }
+
+    return false; // 表示请求可以继续
+}
+
+
+
 const auth = async (request: Request, env: Env) => {
     const method = request.method;
     // console.log(method)
@@ -88,33 +120,17 @@ router.post('/list', auth, async (req: Request, env: Env) => {
     }))
 })
 
-// 假设我们有一个全局计数器和时间戳
-let requestCount = 0;
-let startTime = Date.now();
-const LIMIT = 100; // 允许的最大请求量
-const WINDOW_SIZE = 60000; // 时间窗口大小，以毫秒为单位，例如这里设置为1分钟
-
-const rateLimiter = async (req, res, next) => {
-    const now = Date.now();
-    if (now - startTime > WINDOW_SIZE) {
-        // 如果当前时间超过了时间窗口，重置计数器和开始时间
-        startTime = now;
-        requestCount = 0;
-    }
-
-    if (requestCount >= LIMIT) {
-        // 如果在时间窗口内请求计数超过限制，返回429状态码
-        return res.status(429).send("Too many requests, please try again later.");
-    }
-
-    // 否则，增加请求计数并继续处理请求
-    requestCount++;
-    next();
-};
-
 
 // batch upload file
-router.post('/upload', rateLimiter, async (req: Request, env: Env) => {
+router.post('/upload', async (req: Request, env: Env) => {
+
+    const ip = req.headers.get('CF-Connecting-IP'); // 使用Cloudflare传递的IP
+    const isRateLimited = await rateLimit(ip, env);
+
+    if (isRateLimited) {
+        return new Response('Too Many Requests', { status: 429 });
+    }
+
     const files = await req.formData();
     const images = files.getAll("files");
     const errs = [];
