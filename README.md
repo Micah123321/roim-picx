@@ -40,3 +40,8 @@
 ---
 
 项目fork自[roimdev/roim-picx](https://github.com/roimdev/roim-picx)
+
+# 建议更改
+- 上传不需要认证
+- 上传后代码复制链接修复(注释掉其他的tab
+- 删版权信息
