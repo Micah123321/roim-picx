@@ -1,9 +1,9 @@
-import { router } from '../router';
-import { Env } from '../[[path]]'
-import { json } from 'itty-router-extras';
-import StatusCode, { Ok, Fail, Build, ImgItem, ImgList, ImgReq, Folder, AuthToken, FailCode, NotAuth } from "../type";
-import { checkFileType, getFilePath, parseRange } from '../utils'
-import { R2ListOptions } from "@cloudflare/workers-types";
+import {router} from '../router';
+import {Env} from '../[[path]]'
+import {json} from 'itty-router-extras';
+import StatusCode, {Ok, Fail, Build, ImgItem, ImgList, ImgReq, Folder, AuthToken, FailCode, NotAuth} from "../type";
+import {checkFileType, getFilePath, parseRange} from '../utils'
+import {R2ListOptions} from "@cloudflare/workers-types";
 
 const auth = async (request: Request, env: Env) => {
     const method = request.method;
@@ -88,26 +88,51 @@ router.post('/list', auth, async (req: Request, env: Env) => {
     }))
 })
 
+// 假设我们有一个全局计数器和时间戳
+let requestCount = 0;
+let startTime = Date.now();
+const LIMIT = 100; // 允许的最大请求量
+const WINDOW_SIZE = 60000; // 时间窗口大小，以毫秒为单位，例如这里设置为1分钟
+
+const rateLimiter = async (req, res, next) => {
+    const now = Date.now();
+    if (now - startTime > WINDOW_SIZE) {
+        // 如果当前时间超过了时间窗口，重置计数器和开始时间
+        startTime = now;
+        requestCount = 0;
+    }
+
+    if (requestCount >= LIMIT) {
+        // 如果在时间窗口内请求计数超过限制，返回429状态码
+        return res.status(429).send("Too many requests, please try again later.");
+    }
+
+    // 否则，增加请求计数并继续处理请求
+    requestCount++;
+    next();
+};
+
+
 // batch upload file
-router.post('/upload', auth, async (req: Request, env: Env) => {
-    const files = await req.formData()
-    const images = files.getAll("files")
-    const errs = []
-    const urls = Array<ImgItem>()
+router.post('/upload', rateLimiter, async (req: Request, env: Env) => {
+    const files = await req.formData();
+    const images = files.getAll("files");
+    const errs = [];
+    const urls = Array<ImgItem>();
     for (let item of images) {
-        const fileType = item.type
+        const fileType = item.type;
         if (!checkFileType(fileType)) {
-            errs.push(`${fileType} not support.`)
-            continue
+            errs.push(`${fileType} not support.`);
+            continue;
         }
-        const time = new Date().getTime()
-        const objecPath = await getFilePath(fileType, time)
-        const header = new Headers()
-        header.set("content-type", fileType)
-        header.set("content-length", `${item.size}`)
+        const time = new Date().getTime();
+        const objecPath = await getFilePath(fileType, time);
+        const header = new Headers();
+        header.set("content-type", fileType);
+        header.set("content-length", `${item.size}`);
         const object = await env.R2.put(objecPath, item.stream(), {
             httpMetadata: header,
-        }) as R2Object
+        }) as R2Object;
         if (object || object.key) {
             urls.push({
                 key: object.key,
@@ -115,11 +140,11 @@ router.post('/upload', auth, async (req: Request, env: Env) => {
                 copyUrl: `${env.COPY_URL}/${object.key}`,
                 url: `/rest/${object.key}`,
                 filename: item.name
-            })
+            });
         }
     }
-    return json(Build(urls, errs.toString()))
-})
+    return json(Build(urls, errs.toString()));
+});
 
 // 创建目录
 router.post("/folder", auth, async (req: Request, env: Env) => {

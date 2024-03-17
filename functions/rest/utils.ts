@@ -1,4 +1,10 @@
-const supportFiles = [{ type: 'image/png', ext: 'png' }, { type: 'image/jpeg', ext: 'jpeg' }, { type: 'image/gif', ext: 'gif' }, { type: 'image/webp', ext: 'webp' }, { type: 'image/jpg', ext: 'jpg' }, { type: 'image/x-icon', ext: 'ico' }, { type: 'application/x-ico', ext: 'ico' }, { type: 'image/vnd.microsoft.icon', ext: 'ico' }]
+const supportFiles = [{type: 'image/png', ext: 'png'}, {type: 'image/jpeg', ext: 'jpeg'}, {
+    type: 'image/gif',
+    ext: 'gif'
+}, {type: 'image/webp', ext: 'webp'}, {type: 'image/jpg', ext: 'jpg'}, {
+    type: 'image/x-icon',
+    ext: 'ico'
+}, {type: 'application/x-ico', ext: 'ico'}, {type: 'image/vnd.microsoft.icon', ext: 'ico'}]
 const supportFile = 'image/png,image/jpeg,image/gif,image/webp,image/jpg,image/x-icon,application/x-ico,image/vnd.microsoft.icon'
 
 // 字符串编码
