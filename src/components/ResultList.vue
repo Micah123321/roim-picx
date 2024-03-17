@@ -3,21 +3,21 @@
     <el-tab-pane label="Preview" name="first">
       <image-item :image-list="imageList" ref="imageItem" />
     </el-tab-pane>
-    <el-tab-pane label="HTML" name="second">
-      <div class="text-sm text-gray-600 p-2 bg-gray-100 max-w-full overflow-auto whitespace-pre" @click="copyLink">
-        {{ htmlLinks() }}
-      </div>
-    </el-tab-pane>
-    <el-tab-pane label="Markdown" name="third">
-      <div class="text-sm text-gray-600 p-2 bg-gray-100 max-w-full overflow-auto whitespace-pre" @click="copyLink">
-        {{ markdownLinks() }}
-      </div>
-    </el-tab-pane>
-    <el-tab-pane label="Link" name="fourth">
-      <div class="text-sm text-gray-600 p-2 bg-gray-100 max-w-full overflow-auto whitespace-pre" @click="copyLink">
-        {{ viewLinks() }}
-      </div>
-    </el-tab-pane>
+<!--    <el-tab-pane label="HTML" name="second">-->
+<!--      <div class="text-sm text-gray-600 p-2 bg-gray-100 max-w-full overflow-auto whitespace-pre" @click="copyLink">-->
+<!--        {{ htmlLinks() }}-->
+<!--      </div>-->
+<!--    </el-tab-pane>-->
+<!--    <el-tab-pane label="Markdown" name="third">-->
+<!--      <div class="text-sm text-gray-600 p-2 bg-gray-100 max-w-full overflow-auto whitespace-pre" @click="copyLink">-->
+<!--        {{ markdownLinks() }}-->
+<!--      </div>-->
+<!--    </el-tab-pane>-->
+<!--    <el-tab-pane label="Link" name="fourth">-->
+<!--      <div class="text-sm text-gray-600 p-2 bg-gray-100 max-w-full overflow-auto whitespace-pre" @click="copyLink">-->
+<!--        {{ viewLinks() }}-->
+<!--      </div>-->
+<!--    </el-tab-pane>-->
   </el-tabs>
 </template>
 
